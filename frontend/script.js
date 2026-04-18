@@ -23,7 +23,7 @@ fileInput.addEventListener("change", async () => {
     status.innerText = "⏳ Uploading...";
 
     try {
-      const res = await fetch("http://localhost:5000/api/upload", {
+      const res = await fetch("https://rag-1-ccfm.onrender.com/api/upload", {
         method: "POST",
         body: formData,
       });
@@ -93,7 +93,7 @@ async function askQuestion() {
   const loadingMsg = addMessage("bot", "⏳ Thinking...");
 
   try {
-    const res = await fetch("http://localhost:5000/api/question", {
+    const res = await fetch("https://rag-1-ccfm.onrender.com/api/question", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
