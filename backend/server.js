@@ -1,14 +1,5 @@
-const fs = require("fs");
-const envContent = fs.readFileSync(".env", "utf8");
-const lines = envContent.split("\n");
-lines.forEach((line) => {
-  const [key, value] = line.split("=");
-  if (key && value) {
-    process.env[key.trim()] = value.trim();
-  }
-});
-console.log("✅ Manually loaded .env file");
-console.log("API KEY:", process.env.GEMINI_API_KEY);
+require("dotenv").config();
+console.log("API KEY Loaded:", process.env.GEMINI_API_KEY ? "Yes" : "No");
 
 const express = require("express");
 const cors = require("cors");
