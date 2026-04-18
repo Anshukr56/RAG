@@ -1,6 +1,7 @@
 require("dotenv").config();
 console.log("API KEY Loaded:", process.env.GEMINI_API_KEY ? "Yes" : "No");
 
+const fs = require("fs");
 const express = require("express");
 const cors = require("cors");
 const multer = require("multer");
@@ -11,14 +12,26 @@ const { extractTextFromPDF } = require("./pdfUtils");
 
 const app = express();
 
-// Middleware
-app.use(cors());
+/* Middleware */
+app.use(
+  cors({
+    origin: "*",
+    methods: ["GET", "POST"],
+  }),
+);
+
 app.use(express.json());
 
-// 🚀 Store uploaded PDF texts in memory
+/* Create uploads folder if missing */
+if (!fs.existsSync("uploads")) {
+  fs.mkdirSync("uploads");
+  console.log("📁 uploads folder created");
+}
+
+/* Store uploaded PDF texts in memory */
 let uploadedDocuments = {};
 
-// Multer config
+/* Multer config */
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, "uploads/");
@@ -39,18 +52,26 @@ const upload = multer({
   },
 });
 
-// Upload API
-app.post("/api/upload", upload.single("file"), async (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ error: "No file uploaded" });
-  }
+/* Health check */
+app.get("/", (req, res) => {
+  res.json({ message: "RAG Backend Running ✅" });
+});
 
+/* Upload API */
+app.post("/api/upload", upload.single("file"), async (req, res) => {
   try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        error: "No file uploaded",
+      });
+    }
+
     const filePath = req.file.path;
     const extractedData = await extractTextFromPDF(filePath);
 
-    // 🚀 Store the extracted text
     uploadedDocuments[req.file.filename] = extractedData.text;
+
     console.log(
       `📄 Stored: ${req.file.filename} (${extractedData.pages} pages)`,
     );
@@ -63,30 +84,31 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
       textLength: extractedData.text.length,
     });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: error.message });
+    console.error("Upload Error:", error.message);
+
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
   }
 });
 
-// Health check
-app.get("/", (req, res) => {
-  res.json({ message: "RAG Backend Running ✅" });
-});
-
-// Question API with RAG
+/* Question API */
 app.post("/api/question", async (req, res) => {
-  const { question } = req.body;
-
-  if (!question || question.trim() === "") {
-    return res.status(400).json({ error: "Invalid question" });
-  }
-
   try {
-    // 🚀 Get all stored document texts
+    const { question } = req.body;
+
+    if (!question || question.trim() === "") {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid question",
+      });
+    }
+
     const documentTexts = Object.values(uploadedDocuments).join("\n\n---\n\n");
 
-    // 🚀 Create RAG prompt with document context
     let ragQuestion = question;
+
     if (documentTexts) {
       ragQuestion = `
 You are a PDF assistant.
@@ -108,13 +130,17 @@ ${question}
       answer,
     });
   } catch (error) {
-    console.error("Server Error:", error.message);
-    res.status(500).json({ error: error.message });
+    console.error("Question Error:", error.message);
+
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
   }
 });
 
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
