@@ -1,4 +1,5 @@
 require("dotenv").config();
+
 console.log("API KEY Loaded:", process.env.GEMINI_API_KEY ? "Yes" : "No");
 
 const fs = require("fs");
@@ -7,12 +8,26 @@ const cors = require("cors");
 const multer = require("multer");
 const path = require("path");
 
-const { askGemini } = require("./geminiUtils");
-const { extractTextFromPDF } = require("./pdfUtils");
+const { extractTextFromPDF } = require("./utils/pdfUtils");
+const { askGemini } = require("./utils/geminiUtils");
+const { chunkText } = require("./services/chunkService");
+
+// ✅ STEP 3:
+// Added searchSimilarChunks
+const {
+  initializeVectorStore,
+  addChunks,
+  searchSimilarChunks,
+} = require("./services/vectorStore");
+
+const { generateEmbedding } = require("./services/embeddingService");
 
 const app = express();
 
-/* Middleware */
+// ========================================
+// Middleware
+// ========================================
+
 app.use(
   cors({
     origin: "*",
@@ -22,20 +37,30 @@ app.use(
 
 app.use(express.json());
 
-/* Create uploads folder if missing */
+// ========================================
+// Create uploads folder if missing
+// ========================================
+
 if (!fs.existsSync("uploads")) {
   fs.mkdirSync("uploads");
   console.log("📁 uploads folder created");
 }
 
-/* Store uploaded PDF texts in memory */
+// ========================================
+// Store uploaded PDF texts in memory
+// ========================================
+
 let uploadedDocuments = {};
 
-/* Multer config */
+// ========================================
+// Multer configuration
+// ========================================
+
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, "uploads/");
   },
+
   filename: (req, file, cb) => {
     cb(null, Date.now() + path.extname(file.originalname));
   },
@@ -43,6 +68,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage: storage,
+
   fileFilter: (req, file, cb) => {
     if (file.mimetype === "application/pdf") {
       cb(null, true);
@@ -52,13 +78,23 @@ const upload = multer({
   },
 });
 
-/* Health check */
+// ========================================
+// Health Check
+// ========================================
+
 app.get("/", (req, res) => {
-  res.json({ message: "RAG Backend Running ✅" });
+  res.json({
+    message: "RAG Backend Running",
+  });
 });
 
-/* Upload API */
+// ========================================
+// Upload PDF API
+// ========================================
+
 app.post("/api/upload", upload.single("file"), async (req, res) => {
+  console.log("🔥 Upload API Hit");
+
   try {
     if (!req.file) {
       return res.status(400).json({
@@ -68,13 +104,67 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
     }
 
     const filePath = req.file.path;
+
+    console.log("📄 Extracting from:", filePath);
+
+    // ========================================
+    // 1. Extract text from PDF
+    // ========================================
+
     const extractedData = await extractTextFromPDF(filePath);
 
-    uploadedDocuments[req.file.filename] = extractedData.text;
+    // ========================================
+    // 2. Split text into chunks
+    // ========================================
 
-    console.log(
-      `📄 Stored: ${req.file.filename} (${extractedData.pages} pages)`,
-    );
+    const chunks = chunkText(extractedData.text);
+
+    console.log(`✂️ Created ${chunks.length} chunks`);
+
+    // ========================================
+    // 3. Generate embeddings
+    // ========================================
+
+    console.log("Generating embeddings...");
+
+    const embeddings = [];
+
+    for (const chunk of chunks) {
+      const embedding = await generateEmbedding(chunk);
+
+      embeddings.push(embedding);
+    }
+
+    console.log("Embeddings generated successfully!");
+
+    // ========================================
+    // 4. Store chunks + embeddings in ChromaDB
+    // ========================================
+
+    await addChunks(chunks, embeddings, req.file.filename);
+
+    console.log("\n======================================");
+    console.log(" PDF Uploaded Successfully");
+    console.log("======================================");
+
+    console.log("Filename      :", req.file.filename);
+    console.log("Pages         :", extractedData.pages);
+    console.log("Text Length   :", extractedData.text.length);
+    console.log("Total Chunks  :", chunks.length);
+
+    // ========================================
+    // Temporary local storage
+    // ========================================
+
+    uploadedDocuments[req.file.filename] = {
+      text: extractedData.text,
+      chunks,
+      pages: extractedData.pages,
+    };
+
+    // ========================================
+    // Response
+    // ========================================
 
     res.json({
       success: true,
@@ -82,9 +172,10 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
       filename: req.file.filename,
       pages: extractedData.pages,
       textLength: extractedData.text.length,
+      totalChunks: chunks.length,
     });
   } catch (error) {
-    console.error("Upload Error:", error.message);
+    console.error("❌ Upload Error:", error.message);
 
     res.status(500).json({
       success: false,
@@ -93,10 +184,19 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
   }
 });
 
-/* Question API */
+// ========================================
+// QUESTION API - PROPER RAG
+// ========================================
+
 app.post("/api/question", async (req, res) => {
+  console.log("\n🔥 Question API Called");
+
   try {
     const { question } = req.body;
+
+    // ========================================
+    // Validate question
+    // ========================================
 
     if (!question || question.trim() === "") {
       return res.status(400).json({
@@ -105,32 +205,110 @@ app.post("/api/question", async (req, res) => {
       });
     }
 
-    const documentTexts = Object.values(uploadedDocuments).join("\n\n---\n\n");
+    console.log("❓ Question:", question);
 
-    let ragQuestion = question;
+    // ========================================
+    // STEP 1
+    // Convert question into embedding
+    // ========================================
 
-    if (documentTexts) {
-      ragQuestion = `
-You are a PDF assistant.
+    console.log("🧠 Generating question embedding...");
 
-Use ONLY the document content below to answer clearly.
+    const questionEmbedding = await generateEmbedding(question);
 
-DOCUMENT:
-${documentTexts}
+    console.log("✅ Question embedding generated");
+
+    // ========================================
+    // STEP 2
+    // Search ChromaDB
+    // ========================================
+
+    console.log("🔍 Searching ChromaDB...");
+
+    const results = await searchSimilarChunks(questionEmbedding, 5);
+
+    // ========================================
+    // STEP 3
+    // Extract relevant chunks
+    // ========================================
+
+    const documents = results.documents?.[0] || [];
+
+    console.log(`📚 Retrieved ${documents.length} relevant chunks`);
+
+    // ========================================
+    // No relevant chunks found
+    // ========================================
+
+    if (documents.length === 0) {
+      return res.json({
+        success: true,
+        answer:
+          "I couldn't find relevant information in the uploaded document.",
+      });
+    }
+
+    // ========================================
+    // STEP 4
+    // Create context
+    // ========================================
+
+    const context = documents.join("\n\n---\n\n");
+
+    console.log("📄 Relevant context created");
+
+    // ========================================
+    // STEP 5
+    // Create RAG prompt
+    // ========================================
+
+    const ragQuestion = `
+You are a PDF question-answering assistant.
+
+Your job is to answer the user's question using ONLY
+the information provided in the CONTEXT below.
+
+CONTEXT:
+${context}
 
 QUESTION:
 ${question}
+
+RULES:
+
+1. Use ONLY the information from the CONTEXT.
+2. Do NOT use outside knowledge.
+3. Do NOT make up information.
+4. If the answer is not present in the CONTEXT,
+   say exactly:
+
+"I couldn't find that information in the uploaded document."
+
+5. Give a clear and concise answer.
 `;
-    }
+
+    // ========================================
+    // STEP 6
+    // Send retrieved context to Gemini
+    // ========================================
+
+    console.log("🤖 Sending relevant context to Gemini...");
 
     const answer = await askGemini(ragQuestion);
+
+    console.log("✅ Answer generated");
+
+    // ========================================
+    // STEP 7
+    // Send response to frontend
+    // ========================================
 
     res.json({
       success: true,
       answer,
     });
   } catch (error) {
-    console.error("Question Error:", error.message);
+    console.error("❌ Question Error:", error.message);
 
     res.status(500).json({
       success: false,
@@ -139,8 +317,22 @@ ${question}
   }
 });
 
+// ========================================
+// Start Server
+// ========================================
+
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+async function startServer() {
+  try {
+    await initializeVectorStore();
+
+    app.listen(PORT, () => {
+      console.log(`🚀 Server running on port ${PORT}`);
+    });
+  } catch (error) {
+    console.error("❌ Failed to start server:", error);
+  }
+}
+
+startServer();

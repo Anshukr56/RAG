@@ -2,54 +2,53 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>RAG Document Assistant</title>
+
     <link rel="stylesheet" href="style.css" />
   </head>
+
   <body>
     <div class="container">
-      <!-- Header -->
-      <div class="header">
+      <header class="header">
         <h1>📄 RAG Document Assistant</h1>
-        <p>Upload PDF files and ask questions about them</p>
-      </div>
+        <p>Upload PDFs and ask questions using AI</p>
+      </header>
 
-      <!-- Main Section -->
-      <div class="main-section">
-        <!-- Upload Section (SMALL) -->
-        <div class="upload-section">
-          <h2>📤 Upload Documents</h2>
+      <div class="main">
+        <!-- LEFT -->
 
-          <div
-            class="upload-box"
-            onclick="document.getElementById('fileInput').click()"
-          >
-            <p>➕</p>
-            <p>Drag & Drop PDF files here</p>
-            <span>or click to select</span>
-            <input type="file" id="fileInput" hidden />
+        <div class="left-panel">
+          <h2>Upload Documents</h2>
+
+          <div class="upload-box" id="uploadBox">
+            <h1>📄</h1>
+
+            <p>Click to Upload PDF</p>
+
+            <input type="file" id="fileInput" accept=".pdf" hidden />
           </div>
 
-          <div id="file-list"></div>
           <p id="status"></p>
+
+          <h3>Uploaded Files</h3>
+
+          <div id="file-list"></div>
         </div>
 
-        <!-- Chat Section (BIG) -->
-        <div class="chat-section">
-          <h2>💬 Ask Questions</h2>
+        <!-- RIGHT -->
 
+        <div class="right-panel">
           <div class="chat-box" id="chat-box">
             <div class="message bot">
-              👋 Welcome! Upload a PDF first, then ask questions.
+              👋 Upload a PDF and start asking questions.
             </div>
           </div>
 
-          <div class="input-box">
-            <input
-              type="text"
-              id="question"
-              placeholder="Ask a question about your documents..."
-            />
-            <button onclick="askQuestion()">Send →</button>
+          <div class="input-area">
+            <input type="text" id="question" placeholder="Ask anything..." />
+
+            <button id="sendBtn">Send</button>
           </div>
         </div>
       </div>

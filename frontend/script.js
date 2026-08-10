@@ -1,126 +1,177 @@
+console.log("🔥 FRONTEND SCRIPT LOADED", new Date().toLocaleTimeString());
+const API_URL = "http://localhost:5000";
+console.log("🚨 PAGE LOADED:", new Date().toLocaleTimeString());
+const uploadBox = document.getElementById("uploadBox");
 const fileInput = document.getElementById("fileInput");
 const status = document.getElementById("status");
+const fileList = document.getElementById("file-list");
 const chatBox = document.getElementById("chat-box");
-const fileListDiv = document.getElementById("file-list");
+const questionInput = document.getElementById("question");
+const sendBtn = document.getElementById("sendBtn");
+
+console.log("uploadBox:", uploadBox);
+console.log("fileInput:", fileInput);
+console.log("fileList:", fileList);
 
 let uploadedFiles = [];
 
-/* Upload PDF */
-fileInput.addEventListener("change", async () => {
-  const files = fileInput.files;
+// ===============================
+// Upload Box Click
+// ===============================
 
-  if (files.length === 0) return;
-
-  for (let file of files) {
-    if (file.type !== "application/pdf") {
-      status.innerText = "❌ Only PDF files allowed";
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append("file", file);
-
-    status.innerText = "⏳ Uploading...";
-
-    try {
-      const res = await fetch("https://rag-1-ccfm.onrender.com/api/upload", {
-        method: "POST",
-        body: formData,
-      });
-
-      const data = await res.json();
-
-      if (data.success) {
-        uploadedFiles.push(file.name);
-        status.innerText = "✅ Upload successful";
-        updateFileList();
-
-        addMessage("bot", `📄 Uploaded: ${file.name}`);
-      } else {
-        status.innerText = "❌ Upload failed";
-      }
-    } catch (err) {
-      status.innerText = "❌ Error: " + err.message;
-    }
-  }
+uploadBox.addEventListener("click", () => {
+  console.log(" Upload box clicked");
+  fileInput.click();
 });
 
-/* Update File List */
-function updateFileList() {
-  fileListDiv.innerHTML = "";
-  uploadedFiles.forEach((fileName) => {
-    const fileItem = document.createElement("div");
-    fileItem.className = "file-item";
-    fileItem.innerHTML = `📄 ${fileName}`;
-    fileListDiv.appendChild(fileItem);
-  });
-}
+// ===============================
+// Upload PDF
+// ===============================
 
-/* Add Message */
-function addMessage(role, text) {
-  const msg = document.createElement("div");
-  msg.className = `message ${role}`;
-  msg.innerText = text;
+fileInput.addEventListener("change", async () => {
+  const file = fileInput.files[0];
 
-  chatBox.appendChild(msg);
+  console.log("✅ File selected:", file);
 
-  // ✅ Smooth auto-scroll
-  chatBox.scrollTo({
-    top: chatBox.scrollHeight,
-    behavior: "smooth",
-  });
+  if (!file) return;
 
-  return msg; // 👈 return element (used for loading)
-}
-
-/* Ask Question */
-async function askQuestion() {
-  const input = document.getElementById("question");
-  const question = input.value.trim();
-
-  if (!question) return;
-
-  if (uploadedFiles.length === 0) {
-    addMessage("bot", "⚠️ Please upload a PDF first");
+  // Check PDF
+  if (file.type !== "application/pdf") {
+    status.innerText = "❌ Please select a PDF file.";
     return;
   }
 
-  // Show user message
-  addMessage("user", question);
-  input.value = "";
+  const formData = new FormData();
+  formData.append("file", file);
 
-  // ✅ Show loading message
-  const loadingMsg = addMessage("bot", "⏳ Thinking...");
+  status.innerText = "⏳ Uploading...";
 
   try {
-    const res = await fetch("https://rag-1-ccfm.onrender.com/api/question", {
+    const res = await fetch(`${API_URL}/api/upload`, {
       method: "POST",
+      body: formData,
+    });
+
+    console.log("HTTP status:", res.status);
+
+    const data = await res.json();
+
+    console.log("Response from server:", data);
+
+    // ===============================
+    // Upload Successful
+    // ===============================
+
+    if (res.ok) {
+      console.log("✅ Upload successful");
+
+      status.innerText = "✅ Upload Successful";
+
+      // Store file name
+      uploadedFiles.push(file.name);
+
+      // Create file element
+      const div = document.createElement("div");
+
+      div.className = "file-item";
+      div.textContent = `📄 ${file.name}`;
+
+      // Add file to Uploaded Files
+      fileList.appendChild(div);
+      console.log(" FILE IS IN DOM");
+      console.log("FILE LIST:", fileList.innerHTML);
+
+      console.log(" File added to frontend:", file.name);
+
+      // Show message in chat
+      addMessage("bot", `📄 ${file.name} uploaded successfully.`);
+    } else {
+      console.log(" Upload failed:", data);
+
+      status.innerText = "❌ " + (data.error || "Upload failed");
+    }
+  } catch (err) {
+    console.error(" Upload error:", err);
+
+    status.innerText = " Upload failed. Check backend.";
+  }
+
+  // Clear input
+  fileInput.value = "";
+});
+
+// Ask Question
+
+async function askQuestion() {
+  const question = questionInput.value.trim();
+
+  if (!question) return;
+
+  // Check PDF uploaded
+  if (uploadedFiles.length === 0) {
+    addMessage("bot", " Please upload a PDF first.");
+
+    return;
+  }
+
+  // Show user question
+  addMessage("user", question);
+
+  // Clear input
+  questionInput.value = "";
+
+  try {
+    const res = await fetch(`${API_URL}/api/question`, {
+      method: "POST",
+
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ question: question }),
+
+      body: JSON.stringify({
+        question: question,
+      }),
     });
 
     const data = await res.json();
 
-    // Remove loading message
-    loadingMsg.remove();
+    console.log("Question response:", data);
 
-    if (data.success) {
+    if (res.ok && data.success) {
       addMessage("bot", data.answer);
     } else {
-      addMessage("bot", "❌ Error: " + data.error);
+      addMessage("bot", "❌ " + (data.error || "Something went wrong"));
     }
   } catch (err) {
-    loadingMsg.remove();
-    addMessage("bot", "❌ Error: " + err.message);
+    console.error("❌ Question error:", err);
+
+    addMessage("bot", "❌ Could not connect to backend.");
   }
 }
 
-/* Enter key to send */
-document.getElementById("question").addEventListener("keydown", (e) => {
+// Send Button
+
+sendBtn.addEventListener("click", askQuestion);
+
+// Enter Key
+
+questionInput.addEventListener("keydown", (e) => {
   if (e.key === "Enter") {
-    e.preventDefault(); // ✅ prevents newline
     askQuestion();
   }
 });
+
+// Add Chat Messages
+
+function addMessage(type, text) {
+  const div = document.createElement("div");
+
+  div.className = `message ${type}`;
+
+  div.innerText = text;
+
+  chatBox.appendChild(div);
+
+  // Scroll chat to bottom
+  chatBox.scrollTop = chatBox.scrollHeight;
+}
