@@ -23,9 +23,7 @@ const { generateEmbedding } = require("./services/embeddingService");
 
 const app = express();
 
-// ========================================
 // Middleware
-// ========================================
 
 app.use(
   cors({
@@ -36,24 +34,18 @@ app.use(
 
 app.use(express.json());
 
-// ========================================
 // Create uploads folder if missing
-// ========================================
 
 if (!fs.existsSync("uploads")) {
   fs.mkdirSync("uploads");
   console.log("📁 uploads folder created");
 }
 
-// ========================================
 // Store uploaded PDF texts in memory
-// ========================================
 
 let uploadedDocuments = {};
 
-// ========================================
 // Multer configuration
-// ========================================
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -77,9 +69,7 @@ const upload = multer({
   },
 });
 
-// ========================================
 // Health Check
-// ========================================
 
 app.use(express.static(path.join(__dirname, "../frontend")));
 
@@ -87,9 +77,7 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "../frontend/index.html"));
 });
 
-// ========================================
 // Upload PDF API
-// ========================================
 
 app.post("/api/upload", upload.single("file"), async (req, res) => {
   console.log("🔥 Upload API Hit");
@@ -288,11 +276,7 @@ RULES:
     });
   }
 });
-
-// ========================================
 // Start Server
-// ========================================
-
 const PORT = process.env.PORT || 5000;
 
 async function startServer() {
