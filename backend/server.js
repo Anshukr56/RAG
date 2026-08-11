@@ -12,7 +12,6 @@ const { extractTextFromPDF } = require("./utils/pdfUtils");
 const { askGemini } = require("./utils/geminiUtils");
 const { chunkText } = require("./services/chunkService");
 
-// ✅ STEP 3:
 // Added searchSimilarChunks
 const {
   initializeVectorStore,
@@ -82,10 +81,10 @@ const upload = multer({
 // Health Check
 // ========================================
 
+app.use(express.static(path.join(__dirname, "../frontend")));
+
 app.get("/", (req, res) => {
-  res.json({
-    message: "RAG Backend Running",
-  });
+  res.sendFile(path.join(__dirname, "../frontend/index.html"));
 });
 
 // ========================================
@@ -107,10 +106,7 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
 
     console.log("📄 Extracting from:", filePath);
 
-    // ========================================
     // 1. Extract text from PDF
-    // ========================================
-
     const extractedData = await extractTextFromPDF(filePath);
 
     // ========================================
@@ -121,9 +117,7 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
 
     console.log(`✂️ Created ${chunks.length} chunks`);
 
-    // ========================================
     // 3. Generate embeddings
-    // ========================================
 
     console.log("Generating embeddings...");
 
@@ -137,9 +131,7 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
 
     console.log("Embeddings generated successfully!");
 
-    // ========================================
-    // 4. Store chunks + embeddings in ChromaDB
-    // ========================================
+    // 4. Store chunks + embeddings in
 
     await addChunks(chunks, embeddings, req.file.filename);
 
@@ -152,9 +144,7 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
     console.log("Text Length   :", extractedData.text.length);
     console.log("Total Chunks  :", chunks.length);
 
-    // ========================================
     // Temporary local storage
-    // ========================================
 
     uploadedDocuments[req.file.filename] = {
       text: extractedData.text,
@@ -162,9 +152,7 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
       pages: extractedData.pages,
     };
 
-    // ========================================
     // Response
-    // ========================================
 
     res.json({
       success: true,
@@ -184,9 +172,7 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
   }
 });
 
-// ========================================
 // QUESTION API - PROPER RAG
-// ========================================
 
 app.post("/api/question", async (req, res) => {
   console.log("\n🔥 Question API Called");
@@ -194,9 +180,7 @@ app.post("/api/question", async (req, res) => {
   try {
     const { question } = req.body;
 
-    // ========================================
     // Validate question
-    // ========================================
 
     if (!question || question.trim() === "") {
       return res.status(400).json({
@@ -212,25 +196,19 @@ app.post("/api/question", async (req, res) => {
     // Convert question into embedding
     // ========================================
 
-    console.log("🧠 Generating question embedding...");
+    console.log(" Generating question embedding...");
 
     const questionEmbedding = await generateEmbedding(question);
 
     console.log("✅ Question embedding generated");
 
-    // ========================================
-    // STEP 2
     // Search ChromaDB
-    // ========================================
 
     console.log("🔍 Searching ChromaDB...");
 
     const results = await searchSimilarChunks(questionEmbedding, 5);
 
-    // ========================================
-    // STEP 3
     // Extract relevant chunks
-    // ========================================
 
     const documents = results.documents?.[0] || [];
 
@@ -287,10 +265,7 @@ RULES:
 5. Give a clear and concise answer.
 `;
 
-    // ========================================
-    // STEP 6
     // Send retrieved context to Gemini
-    // ========================================
 
     console.log("🤖 Sending relevant context to Gemini...");
 
@@ -298,10 +273,7 @@ RULES:
 
     console.log("✅ Answer generated");
 
-    // ========================================
-    // STEP 7
     // Send response to frontend
-    // ========================================
 
     res.json({
       success: true,
@@ -328,10 +300,10 @@ async function startServer() {
     await initializeVectorStore();
 
     app.listen(PORT, () => {
-      console.log(`🚀 Server running on port ${PORT}`);
+      console.log(` Server running on port ${PORT}`);
     });
   } catch (error) {
-    console.error("❌ Failed to start server:", error);
+    console.error(" Failed to start server:", error);
   }
 }
 
