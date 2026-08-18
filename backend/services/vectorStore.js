@@ -47,7 +47,7 @@ async function addChunks(chunks, embeddings, filename) {
   console.log(` Stored ${chunks.length} chunks in ChromaDB`);
 }
 
-// 🔥 NEW: Search relevant chunks
+//  NEW: Search relevant chunks
 async function searchSimilarChunks(queryEmbedding, topK = 5) {
   const collection = getCollection();
 

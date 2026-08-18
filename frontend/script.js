@@ -1,6 +1,6 @@
-console.log("🔥 FRONTEND SCRIPT LOADED", new Date().toLocaleTimeString());
+console.log("FRONTEND SCRIPT LOADED", new Date().toLocaleTimeString());
 const API_URL = "https://rag-2-xofd.onrender.com";
-console.log("🚨 PAGE LOADED:", new Date().toLocaleTimeString());
+console.log("PAGE LOADED:", new Date().toLocaleTimeString());
 const uploadBox = document.getElementById("uploadBox");
 const fileInput = document.getElementById("fileInput");
 const status = document.getElementById("status");
@@ -15,29 +15,25 @@ console.log("fileList:", fileList);
 
 let uploadedFiles = [];
 
-// ===============================
 // Upload Box Click
-// ===============================
 
 uploadBox.addEventListener("click", () => {
   console.log(" Upload box clicked");
   fileInput.click();
 });
 
-// ===============================
 // Upload PDF
-// ===============================
 
 fileInput.addEventListener("change", async () => {
   const file = fileInput.files[0];
 
-  console.log("✅ File selected:", file);
+  console.log(" File selected:", file);
 
   if (!file) return;
 
   // Check PDF
   if (file.type !== "application/pdf") {
-    status.innerText = "❌ Please select a PDF file.";
+    status.innerText = " Please select a PDF file.";
     return;
   }
 
@@ -58,14 +54,12 @@ fileInput.addEventListener("change", async () => {
 
     console.log("Response from server:", data);
 
-    // ===============================
     // Upload Successful
-    // ===============================
 
     if (res.ok) {
-      console.log("✅ Upload successful");
+      console.log("Upload successful");
 
-      status.innerText = "✅ Upload Successful";
+      status.innerText = "Upload Successful";
 
       // Store file name
       uploadedFiles.push(file.name);
@@ -74,7 +68,7 @@ fileInput.addEventListener("change", async () => {
       const div = document.createElement("div");
 
       div.className = "file-item";
-      div.textContent = `📄 ${file.name}`;
+      div.textContent = ` ${file.name}`;
 
       // Add file to Uploaded Files
       fileList.appendChild(div);
@@ -84,7 +78,7 @@ fileInput.addEventListener("change", async () => {
       console.log(" File added to frontend:", file.name);
 
       // Show message in chat
-      addMessage("bot", `📄 ${file.name} uploaded successfully.`);
+      addMessage("bot", ` ${file.name} uploaded successfully.`);
     } else {
       console.log(" Upload failed:", data);
 
@@ -143,9 +137,9 @@ async function askQuestion() {
       addMessage("bot", "❌ " + (data.error || "Something went wrong"));
     }
   } catch (err) {
-    console.error("❌ Question error:", err);
+    console.error("Question error:", err);
 
-    addMessage("bot", "❌ Could not connect to backend.");
+    addMessage("bot", "Could not connect to backend.");
   }
 }
 

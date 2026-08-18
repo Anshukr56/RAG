@@ -38,7 +38,7 @@ app.use(express.json());
 
 if (!fs.existsSync("uploads")) {
   fs.mkdirSync("uploads");
-  console.log("📁 uploads folder created");
+  console.log("uploads folder created");
 }
 
 // Store uploaded PDF texts in memory
@@ -80,7 +80,7 @@ app.get("/", (req, res) => {
 // Upload PDF API
 
 app.post("/api/upload", upload.single("file"), async (req, res) => {
-  console.log("🔥 Upload API Hit");
+  console.log("Upload API Hit");
 
   try {
     if (!req.file) {
@@ -92,18 +92,16 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
 
     const filePath = req.file.path;
 
-    console.log("📄 Extracting from:", filePath);
+    console.log("Extracting from:", filePath);
 
     // 1. Extract text from PDF
     const extractedData = await extractTextFromPDF(filePath);
 
-    // ========================================
     // 2. Split text into chunks
-    // ========================================
 
     const chunks = chunkText(extractedData.text);
 
-    console.log(`✂️ Created ${chunks.length} chunks`);
+    console.log(`Created ${chunks.length} chunks`);
 
     // 3. Generate embeddings
 
@@ -151,7 +149,7 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
       totalChunks: chunks.length,
     });
   } catch (error) {
-    console.error("❌ Upload Error:", error.message);
+    console.error("Upload Error:", error.message);
 
     res.status(500).json({
       success: false,
@@ -159,8 +157,6 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
     });
   }
 });
-
-// QUESTION API - PROPER RAG
 
 app.post("/api/question", async (req, res) => {
   console.log("\n🔥 Question API Called");
@@ -179,20 +175,18 @@ app.post("/api/question", async (req, res) => {
 
     console.log("❓ Question:", question);
 
-    // ========================================
     // STEP 1
     // Convert question into embedding
-    // ========================================
 
     console.log(" Generating question embedding...");
 
     const questionEmbedding = await generateEmbedding(question);
 
-    console.log("✅ Question embedding generated");
+    console.log("Question embedding generated");
 
     // Search ChromaDB
 
-    console.log("🔍 Searching ChromaDB...");
+    console.log("Searching ChromaDB...");
 
     const results = await searchSimilarChunks(questionEmbedding, 5);
 
@@ -200,7 +194,7 @@ app.post("/api/question", async (req, res) => {
 
     const documents = results.documents?.[0] || [];
 
-    console.log(`📚 Retrieved ${documents.length} relevant chunks`);
+    console.log(`Retrieved ${documents.length} relevant chunks`);
 
     // ========================================
     // No relevant chunks found
@@ -221,7 +215,7 @@ app.post("/api/question", async (req, res) => {
 
     const context = documents.join("\n\n---\n\n");
 
-    console.log("📄 Relevant context created");
+    console.log("Relevant context created");
 
     // ========================================
     // STEP 5
@@ -255,11 +249,11 @@ RULES:
 
     // Send retrieved context to Gemini
 
-    console.log("🤖 Sending relevant context to Gemini...");
+    console.log(" Sending relevant context to Gemini...");
 
     const answer = await askGemini(ragQuestion);
 
-    console.log("✅ Answer generated");
+    console.log(" Answer generated");
 
     // Send response to frontend
 
@@ -268,7 +262,7 @@ RULES:
       answer,
     });
   } catch (error) {
-    console.error("❌ Question Error:", error.message);
+    console.error(" Question Error:", error.message);
 
     res.status(500).json({
       success: false,
