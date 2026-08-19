@@ -40,7 +40,7 @@ fileInput.addEventListener("change", async () => {
   const formData = new FormData();
   formData.append("file", file);
 
-  status.innerText = "⏳ Uploading...";
+  status.innerText = "Uploading...";
 
   try {
     const res = await fetch(`${API_URL}/api/upload`, {

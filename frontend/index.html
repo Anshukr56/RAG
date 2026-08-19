@@ -1,59 +1,61 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>RAG Document Assistant</title>
 
-    <link rel="stylesheet" href="style.css" />
-  </head>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RAG Document Assistant</title>
 
-  <body>
-    <div class="container">
-      <header class="header">
-        <h1>📄 RAG Document Assistant</h1>
-        <p>Upload PDFs and ask questions using AI</p>
-      </header>
+  <link rel="stylesheet" href="style.css" />
+</head>
 
-      <div class="main">
-        <!-- LEFT -->
+<body>
+  <div class="container">
+    <header class="header">
+      <h1>RAG Document Assistant</h1>
+      <p>Upload PDFs and ask questions using AI</p>
+    </header>
 
-        <div class="left-panel">
-          <h2>Upload Documents</h2>
+    <div class="main">
+      <!-- LEFT -->
 
-          <div class="upload-box" id="uploadBox">
-            <h1>📄</h1>
+      <div class="left-panel">
+        <h2>Upload Documents</h2>
 
-            <p>Click to Upload PDF</p>
+        <div class="upload-box" id="uploadBox">
+          <h1>📄</h1>
 
-            <input type="file" id="fileInput" accept=".pdf" hidden />
-          </div>
+          <p>Click to Upload PDF</p>
 
-          <p id="status"></p>
-
-          <h3>Uploaded Files</h3>
-
-          <div id="file-list"></div>
+          <input type="file" id="fileInput" accept=".pdf" hidden />
         </div>
 
-        <!-- RIGHT -->
+        <p id="status"></p>
 
-        <div class="right-panel">
-          <div class="chat-box" id="chat-box">
-            <div class="message bot">
-              Upload a PDF and start asking questions.
-            </div>
+        <h3>Uploaded Files</h3>
+
+        <div id="file-list"></div>
+      </div>
+
+      <!-- RIGHT -->
+
+      <div class="right-panel">
+        <div class="chat-box" id="chat-box">
+          <div class="message bot">
+            Upload a PDF and start asking questions.
           </div>
+        </div>
 
-          <div class="input-area">
-            <input type="text" id="question" placeholder="Ask anything..." />
+        <div class="input-area">
+          <input type="text" id="question" placeholder="Ask anything..." />
 
-            <button id="sendBtn">Send</button>
-          </div>
+          <button id="sendBtn">Send</button>
         </div>
       </div>
     </div>
+  </div>
 
-    <script src="script.js"></script>
-  </body>
+  <script src="script.js"></script>
+</body>
+
 </html>

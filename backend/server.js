@@ -159,7 +159,7 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
 });
 
 app.post("/api/question", async (req, res) => {
-  console.log("\n🔥 Question API Called");
+  console.log("\n Question API Called");
 
   try {
     const { question } = req.body;
@@ -173,9 +173,8 @@ app.post("/api/question", async (req, res) => {
       });
     }
 
-    console.log("❓ Question:", question);
+    console.log("Question:", question);
 
-    // STEP 1
     // Convert question into embedding
 
     console.log(" Generating question embedding...");
@@ -196,9 +195,7 @@ app.post("/api/question", async (req, res) => {
 
     console.log(`Retrieved ${documents.length} relevant chunks`);
 
-    // ========================================
     // No relevant chunks found
-    // ========================================
 
     if (documents.length === 0) {
       return res.json({
@@ -208,19 +205,13 @@ app.post("/api/question", async (req, res) => {
       });
     }
 
-    // ========================================
-    // STEP 4
     // Create context
-    // ========================================
 
     const context = documents.join("\n\n---\n\n");
 
     console.log("Relevant context created");
 
-    // ========================================
-    // STEP 5
     // Create RAG prompt
-    // ========================================
 
     const ragQuestion = `
 You are a PDF question-answering assistant.
