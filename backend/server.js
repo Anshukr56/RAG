@@ -214,10 +214,9 @@ app.post("/api/question", async (req, res) => {
     // Create RAG prompt
 
     const ragQuestion = `
-You are a PDF question-answering assistant.
+You are a helpful PDF question-answering assistant.
 
-Your job is to answer the user's question using ONLY
-the information provided in the CONTEXT below.
+Your job is to answer the user's question using the information provided in the CONTEXT below.
 
 CONTEXT:
 ${context}
@@ -226,16 +225,12 @@ QUESTION:
 ${question}
 
 RULES:
-
-1. Use ONLY the information from the CONTEXT.
-2. Do NOT use outside knowledge.
-3. Do NOT make up information.
-4. If the answer is not present in the CONTEXT,
-   say exactly:
-
+1. Use ONLY the information provided in the CONTEXT.
+2. Do NOT use outside knowledge or invent facts.
+3. If the user asks for a summary, overview, or what the PDF/document is about, summarize the information present in the CONTEXT.
+4. If the answer is not present and cannot be inferred from the CONTEXT, say exactly:
 "I couldn't find that information in the uploaded document."
-
-5. Give a clear and concise answer.
+5. Give a clear, helpful, and concise answer.
 `;
 
     // Send retrieved context to Gemini

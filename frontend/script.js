@@ -1,5 +1,7 @@
-console.log("FRONTEND SCRIPT LOADED", new Date().toLocaleTimeString());
-const API_URL = "https://rag-2-xofd.onrender.com";
+const API_URL = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" 
+  ? "http://localhost:5000" 
+  : "https://rag-2-xofd.onrender.com";
+console.log("Using API_URL:", API_URL);
 console.log("PAGE LOADED:", new Date().toLocaleTimeString());
 const uploadBox = document.getElementById("uploadBox");
 const fileInput = document.getElementById("fileInput");
