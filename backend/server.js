@@ -1,4 +1,5 @@
-require("dotenv").config();
+const path = require("path");
+require("dotenv").config({ path: path.join(__dirname, ".env") });
 
 console.log("API KEY Loaded:", process.env.GEMINI_API_KEY ? "Yes" : "No");
 
@@ -6,7 +7,6 @@ const fs = require("fs");
 const express = require("express");
 const cors = require("cors");
 const multer = require("multer");
-const path = require("path");
 
 const { extractTextFromPDF } = require("./utils/pdfUtils");
 const { askGemini } = require("./utils/geminiUtils");
