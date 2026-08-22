@@ -162,7 +162,8 @@ app.post("/api/question", async (req, res) => {
   console.log("\n Question API Called");
 
   try {
-    const { question } = req.body;
+    const { question, filename } = req.body;
+    console.log("Filtering by filename:", filename || "(none — searching all)");
 
     // Validate question
 
@@ -187,7 +188,7 @@ app.post("/api/question", async (req, res) => {
 
     console.log("Searching ChromaDB...");
 
-    const results = await searchSimilarChunks(questionEmbedding, 5);
+    const results = await searchSimilarChunks(questionEmbedding, 5, filename || null);
 
     // Extract relevant chunks
 

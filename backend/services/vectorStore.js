@@ -50,14 +50,22 @@ async function addChunks(chunks, embeddings, filename) {
   console.log(` Stored ${chunks.length} chunks in ChromaDB`);
 }
 
-//  NEW: Search relevant chunks
-async function searchSimilarChunks(queryEmbedding, topK = 5) {
+// Search relevant chunks — optionally filtered by filename
+async function searchSimilarChunks(queryEmbedding, topK = 5, filename = null) {
   const collection = getCollection();
 
-  const results = await collection.query({
+  const queryParams = {
     queryEmbeddings: [queryEmbedding],
     nResults: topK,
-  });
+  };
+
+  // Filter results to only the specified PDF's chunks
+  if (filename) {
+    queryParams.where = { filename: { $eq: filename } };
+    console.log(` Filtering ChromaDB search to filename: ${filename}`);
+  }
+
+  const results = await collection.query(queryParams);
 
   console.log(" ChromaDB search completed");
 

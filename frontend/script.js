@@ -16,6 +16,7 @@ console.log("fileInput:", fileInput);
 console.log("fileList:", fileList);
 
 let uploadedFiles = [];
+let activeFilename = null; // server-assigned filename (e.g. "1724334234567.pdf")
 
 // Upload Box Click
 
@@ -63,6 +64,10 @@ fileInput.addEventListener("change", async () => {
 
       status.innerText = "Upload Successful";
 
+      // Save the server-assigned filename for filtering ChromaDB
+      activeFilename = data.filename;
+      console.log("Active server filename:", activeFilename);
+
       // Store file name
       uploadedFiles.push(file.name);
 
@@ -80,7 +85,7 @@ fileInput.addEventListener("change", async () => {
       console.log(" File added to frontend:", file.name);
 
       // Show message in chat
-      addMessage("bot", ` ${file.name} uploaded successfully.`);
+      addMessage("bot", ` ${file.name} uploaded successfully. You can now ask questions about it.`);
     } else {
       console.log(" Upload failed:", data);
 
@@ -126,6 +131,7 @@ async function askQuestion() {
 
       body: JSON.stringify({
         question: question,
+        filename: activeFilename, // send active server filename to filter ChromaDB
       }),
     });
 
